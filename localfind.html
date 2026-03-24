@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocalFind — Find Trusted Services Near You</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1a6b3a;
+    --green-light: #27a95c;
+    --green-dark: #0f3d22;
+    --yellow: #f5c518;
+    --cream: #faf7f0;
+    --dark: #0d1117;
+    --text: #1c1c1c;
+    --muted: #6b7280;
+    --card-bg: #ffffff;
+    --border: #e5e7eb;
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--green-dark);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+  .logo {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--yellow); }
+  .nav-badge {
+    background: var(--yellow);
+    color: var(--green-dark);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 60%, #1f8a4a 100%);
+    padding: 60px 24px 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.06);
+    top: -200px; right: -150px;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.06);
+    bottom: -100px; left: -80px;
+  }
+  .hero-tag {
+    display: inline-block;
+    background: rgba(245,197,24,0.15);
+    border: 1px solid rgba(245,197,24,0.4);
+    color: var(--yellow);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+  }
+  .hero h1 {
+    font-size: clamp(32px, 6vw, 52px);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--yellow);
+  }
+  .hero p {
+    color: rgba(255,255,255,0.75);
+    font-size: 16px;
+    max-width: 480px;
+    margin: 0 auto 36px;
+    line-height: 1.7;
+  }
+
+  /* SEARCH BAR */
+  .search-wrap {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+  .search-bar {
+    display: flex;
+    background: #fff;
+    border-radius: 50px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+  }
+  .search-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 18px 24px;
+    font-size: 15px;
+    font-family: 'Sora', sans-serif;
+    color: var(--text);
+    background: transparent;
+  }
+  .search-bar input::placeholder { color: #aaa; }
+  .search-btn {
+    background: var(--green);
+    color: #fff;
+    border: none;
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    border-radius: 0 50px 50px 0;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .search-btn:hover { background: var(--green-light); }
+
+  .quick-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  .quick-tag {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.85);
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  .quick-tag:hover { background: rgba(255,255,255,0.22); color: #fff; }
+
+  /* AI ASSISTANT PANEL */
+  .ai-panel {
+    max-width: 720px;
+    margin: -30px auto 0;
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+    position: relative;
+    z-index: 10;
+    display: none;
+  }
+  .ai-panel.visible { display: block; }
+  .ai-panel-header {
+    background: var(--green);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ai-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--yellow);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .ai-panel-header span {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .ai-body {
+    padding: 20px;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.7;
+    min-height: 60px;
+  }
+  .ai-body.loading::after {
+    content: '▋';
+    animation: blink 0.7s infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* CATEGORIES */
+  .section { padding: 48px 20px; max-width: 960px; margin: 0 auto; }
+  .section-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--green-dark);
+  }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    margin-bottom: 48px;
+  }
+  .cat-card {
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .cat-card:hover, .cat-card.active {
+    border-color: var(--green);
+    background: #f0faf4;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(26,107,58,0.12);
+  }
+  .cat-icon { font-size: 28px; margin-bottom: 8px; }
+  .cat-name { font-size: 12px; font-weight: 600; color: var(--text); }
+
+  /* SERVICE CARDS */
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: gap;
+  }
+  .results-count {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .service-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.25s;
+    cursor: pointer;
+    animation: fadeUp 0.4s ease forwards;
+    opacity: 0;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .service-card:hover {
+    border-color: var(--green-light);
+    box-shadow: 0 8px 32px rgba(26,107,58,0.12);
+    transform: translateY(-3px);
+  }
+  .card-top {
+    padding: 20px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .provider-avatar {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .provider-info h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+  .provider-info .category-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--green);
+    background: #e8f7ef;
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: inline-block;
+  }
+  .card-body { padding: 14px 20px; }
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .card-meta span { font-size: 14px; }
+  .rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #f59e0b;
+    margin-bottom: 10px;
+  }
+  .rating small { color: var(--muted); font-weight: 400; font-size: 11px; }
+  .card-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .card-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .btn-call {
+    flex: 1;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    transition: background 0.2s;
+  }
+  .btn-call:hover { background: var(--green-light); }
+  .btn-save {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--muted);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-save:hover { border-color: var(--green); color: var(--green); }
+  .verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--green);
+    font-weight: 600;
+    background: #e8f7ef;
+    padding: 3px 8px;
+    border-radius: 8px;
+    margin-top: 8px;
+  }
+
+  /* REQUEST FORM */
+  .request-section {
+    background: var(--green-dark);
+    padding: 48px 24px;
+    text-align: center;
+  }
+  .request-section h2 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .request-section p {
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 28px;
+    font-size: 15px;
+  }
+  .request-form {
+    max-width: 520px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .request-form input,
+  .request-form select,
+  .request-form textarea {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 14px;
+    font-family: 'Sora', sans-serif;
+    outline: none;
+    transition: border 0.2s;
+    width: 100%;
+  }
+  .request-form input::placeholder,
+  .request-form textarea::placeholder { color: rgba(255,255,255,0.4); }
+  .request-form input:focus,
+  .request-form select:focus,
+  .request-form textarea:focus { border-color: var(--yellow); }
+  .request-form select option { background: var(--green-dark); }
+  .request-form textarea { resize: vertical; min-height: 90px; }
+  .btn-submit {
+    background: var(--yellow);
+    color: var(--green-dark);
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .btn-submit:hover { background: #f7d34a; transform: translateY(-1px); }
+
+  /* STATS */
+  .stats-bar {
+    background: var(--yellow);
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--green-dark);
+    font-family: 'Space Mono', monospace;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--green-dark);
+    font-weight: 600;
+    opacity: 0.7;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 20px;
+    max-width: 480px;
+    width: 100%;
+    padding: 32px;
+    position: relative;
+    animation: popIn 0.3s ease;
+  }
+  @keyframes popIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .modal-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: var(--border);
+    border: none;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .modal .modal-cat { color: var(--green); font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+  .modal-detail { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 14px; }
+  .modal-detail span.icon { font-size: 18px; }
+  .modal-btn {
+    width: 100%;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    margin-top: 20px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green-dark);
+    color: #fff;
+    padding: 14px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 9999;
+    transition: transform 0.3s ease;
+    border-left: 4px solid var(--yellow);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* FOOTER */
+  footer {
+    background: var(--dark);
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    padding: 24px;
+    font-size: 12px;
+  }
+  footer strong { color: var(--yellow); }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+
+  @media (max-width: 600px) {
+    .hero { padding: 40px 16px 60px; }
+    .stats-bar { gap: 24px; }
+    .services-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Local<span>Find</span></div>
+  <div class="nav-badge">📍 Akure, Ondo</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">🇳🇬 DIGITAL INCLUSION · AKURE PILOT</div>
+  <h1>Find <em>trusted</em> local services<br>near you — instantly</h1>
+  <p>Stop relying on word of mouth. Discover verified plumbers, electricians, tailors, and more in your community — powered by AI.</p>
+
+  <div class="search-wrap">
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search services, e.g. 'plumber near me'..." />
+      <button class="search-btn" onclick="handleSearch()">🔍 Search</button>
+    </div>
+    <div class="quick-tags">
+      <span class="quick-tag" onclick="quickSearch('Electrician')">⚡ Electrician</span>
+      <span class="quick-tag" onclick="quickSearch('Plumber')">🔧 Plumber</span>
+      <span class="quick-tag" onclick="quickSearch('Tailor')">👗 Tailor</span>
+      <span class="quick-tag" onclick="quickSearch('Generator Repair')">🔌 Generator</span>
+      <span class="quick-tag" onclick="quickSearch('Mechanic')">🚗 Mechanic</span>
+    </div>
+  </div>
+</div>
+
+<!-- AI PANEL -->
+<div style="max-width:720px;margin:-30px auto 0;padding:0 20px;position:relative;z-index:10;">
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-dot"></div>
+      <span>AI Assistant · Analyzing your request...</span>
+    </div>
+    <div class="ai-body" id="aiBody"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="section">
+  <!-- CATEGORIES -->
+  <div class="section-title">Browse by Category</div>
+  <div class="section-sub">Tap a category to filter providers in Akure</div>
+  <div class="cat-grid" id="catGrid"></div>
+
+  <!-- RESULTS -->
+  <div class="results-header">
+    <div>
+      <div class="section-title" id="resultsTitle">All Providers</div>
+      <div class="section-sub" id="resultsSubtitle">Showing verified service providers in Akure, Ondo State</div>
+    </div>
+    <div class="results-count" id="resultsCount"></div>
+  </div>
+  <div class="services-grid" id="servicesGrid"></div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat"><div class="stat-num">47+</div><div class="stat-label">Providers Listed</div></div>
+  <div class="stat"><div class="stat-num">12</div><div class="stat-label">Service Categories</div></div>
+  <div class="stat"><div class="stat-num">4.7★</div><div class="stat-label">Avg. Rating</div></div>
+  <div class="stat"><div class="stat-num">Ondo</div><div class="stat-label">State Pilot</div></div>
+</div>
+
+<!-- REQUEST SERVICE -->
+<div class="request-section">
+  <h2>Can't find what you need?</h2>
+  <p>Submit a service request and we'll match you with the right provider within the hour.</p>
+  <div class="request-form">
+    <input type="text" id="reqName" placeholder="Your name" />
+    <input type="text" id="reqPhone" placeholder="Phone number (e.g. 080XXXXXXXX)" />
+    <select id="reqCategory">
+      <option value="" disabled selected>Select service category</option>
+      <option>Electrician</option>
+      <option>Plumber</option>
+      <option>Generator Repair</option>
+      <option>Tailor / Fashion</option>
+      <option>Mechanic / Auto</option>
+      <option>Carpenter</option>
+      <option>Painter</option>
+      <option>Cleaner</option>
+      <option>Photographer</option>
+      <option>IT / Tech Support</option>
+      <option>Other</option>
+    </select>
+    <textarea id="reqDesc" placeholder="Describe what you need (e.g. 'My ceiling fan stopped working, need repair today')"></textarea>
+    <button class="btn-submit" onclick="submitRequest()">📤 Submit Request</button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  &copy; 2026 LocalFind · Akure, Ondo State
+</footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const categories = [
+  { id:'all', name:'All', icon:'🏪' },
+  { id:'electrician', name:'Electrician', icon:'⚡' },
+  { id:'plumber', name:'Plumber', icon:'🔧' },
+  { id:'generator', name:'Generator', icon:'🔌' },
+  { id:'mechanic', name:'Mechanic', icon:'🚗' },
+  { id:'tailor', name:'Tailor', icon:'👗' },
+  { id:'carpenter', name:'Carpenter', icon:'🪵' },
+  { id:'cleaner', name:'Cleaner', icon:'🧹' },
+  { id:'painter', name:'Painter', icon:'🎨' },
+  { id:'tech', name:'IT/Tech', icon:'💻' },
+  { id:'photographer', name:'Photo', icon:'📸' },
+  { id:'caterer', name:'Caterer', icon:'🍛' },
+];
+
+const providers = [
+  { id:1, name:'Tunde Electrical Works', category:'electrician', catLabel:'Electrician', icon:'⚡', color:'#fff3cd', area:'Oke-Aro, Akure', phone:'08031234567', rating:4.8, reviews:43, desc:'Domestic and commercial wiring, panel upgrades, fault diagnosis. 15 years experience in Akure.', verified:true, price:'₦3,000–₦15,000' },
+  { id:2, name:'Bello & Sons Plumbing', category:'plumber', catLabel:'Plumber', icon:'🔧', color:'#dbeafe', area:'Shagari Village, Akure', phone:'08051239876', rating:4.6, reviews:31, desc:'Pipe laying, water pump installation, bathroom fittings, and leak repairs. Fast response.', verified:true, price:'₦2,500–₦12,000' },
+  { id:3, name:'PowerFix Generator Repair', category:'generator', catLabel:'Generator', icon:'🔌', color:'#fce7f3', area:'FUTA Road, Akure', phone:'08071112233', rating:4.9, reviews:67, desc:'All brands: Sumec, Mikano, Elemax, Honda. Servicing, rewinding, part replacement.', verified:true, price:'₦5,000–₦30,000' },
+  { id:4, name:'Mama Adunola Catering', category:'caterer', catLabel:'Caterer', icon:'🍛', color:'#dcfce7', area:'Alagbaka, Akure', phone:'08022334455', rating:4.7, reviews:52, desc:'Events, parties, office catering. Jollof, Egusi, Asaro, small chops. Advance booking required.', verified:true, price:'₦500/head+' },
+  { id:5, name:'Adewale Fashions', category:'tailor', catLabel:'Tailor', icon:'👗', color:'#ede9fe', area:'Oja-Oba Market, Akure', phone:'08061115555', rating:4.5, reviews:28, desc:'Men and women native wear, school uniforms, corporate outfits. Quick turnaround.', verified:false, price:'₦3,000–₦25,000' },
+  { id:6, name:'Chukwudi Auto Garage', category:'mechanic', catLabel:'Mechanic', icon:'🚗', color:'#fef9c3', area:'Old Garage Area, Akure', phone:'08091234444', rating:4.6, reviews:39, desc:'Toyota, Honda, Kia diagnostics and repairs. Panel beating and spray painting available.', verified:true, price:'₦5,000–₦50,000' },
+  { id:7, name:'CleanMate Services', category:'cleaner', catLabel:'Cleaner', icon:'🧹', color:'#e0f2fe', area:'Ijoka, Akure', phone:'08033334444', rating:4.4, reviews:21, desc:'Residential and office deep cleaning, post-event cleanup, carpet washing.', verified:false, price:'₦5,000–₦20,000' },
+  { id:8, name:'Oluwafemi Tech Hub', category:'tech', catLabel:'IT/Tech', icon:'💻', color:'#f3e8ff', area:'FUTA South Gate, Akure', phone:'08012345678', rating:4.8, reviews:55, desc:'Laptop/PC repair, software installation, networking, CCTV setup, phone screen repair.', verified:true, price:'₦2,000–₦25,000' },
+  { id:9, name:'Kola Woodworks', category:'carpenter', catLabel:'Carpenter', icon:'🪵', color:'#fef3c7', area:'Ijapo Estate, Akure', phone:'08077778888', rating:4.5, reviews:17, desc:'Custom furniture, doors, wardrobes, kitchen cabinets. Home visits available.', verified:true, price:'₦15,000–₦200,000' },
+  { id:10, name:'LensKraft Photography', category:'photographer', catLabel:'Photographer', icon:'📸', color:'#fce7f3', area:'Oyemekun Road, Akure', phone:'08044445566', rating:4.9, reviews:84, desc:'Wedding, graduation, product, and event photography. Drone footage available.', verified:true, price:'₦15,000–₦80,000' },
+  { id:11, name:'Deji Paint & Deco', category:'painter', catLabel:'Painter', icon:'🎨', color:'#dcfce7', area:'Oke-Ijebu, Akure', phone:'08088889999', rating:4.3, reviews:14, desc:'Interior and exterior painting, wall texturing, POP design. Free consultation.', verified:false, price:'₦8,000–₦60,000' },
+  { id:12, name:'Fatima Power Solutions', category:'generator', catLabel:'Generator', icon:'🔌', color:'#fce7f3', area:'Isolo, Akure', phone:'08055556677', rating:4.7, reviews:33, desc:'Generator sales, installation, and repair. Solar inverter installation also available.', verified:true, price:'₦4,000–₦25,000' },
+];
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let activeCategory = 'all';
+let activeSearch = '';
+
+// ─── RENDER CATEGORIES ───────────────────────────────────────────────────────
+function renderCategories() {
+  const grid = document.getElementById('catGrid');
+  grid.innerHTML = categories.map(c => `
+    <div class="cat-card ${c.id === activeCategory ? 'active' : ''}" onclick="filterCategory('${c.id}')">
+      <div class="cat-icon">${c.icon}</div>
+      <div class="cat-name">${c.name}</div>
+    </div>
+  `).join('');
+}
+
+// ─── RENDER SERVICES ─────────────────────────────────────────────────────────
+function renderServices(list) {
+  const grid = document.getElementById('servicesGrid');
+  const count = document.getElementById('resultsCount');
+  count.textContent = `${list.length} provider${list.length !== 1 ? 's' : ''} found`;
+
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="icon">🔍</div>
+      <p>No providers found for that search.<br>Try a different keyword or submit a request below.</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map((p, i) => `
+    <div class="service-card" style="animation-delay:${i * 0.07}s" onclick="openModal(${p.id})">
+      <div class="card-top">
+        <div class="provider-avatar" style="background:${p.color}">${p.icon}</div>
+        <div class="provider-info">
+          <h3>${p.name}</h3>
+          <span class="category-tag">${p.catLabel}</span>
+          ${p.verified ? '<div class="verified-badge">✅ Verified</div>' : ''}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span>📍</span>${p.area}</div>
+        <div class="rating">
+          ${'★'.repeat(Math.floor(p.rating))}${'☆'.repeat(5 - Math.floor(p.rating))}
+          ${p.rating} <small>(${p.reviews} reviews)</small>
+        </div>
+        <div class="card-desc">${p.desc}</div>
+        <div style="font-size:12px;color:var(--green);font-weight:700;margin-bottom:12px;">💰 ${p.price}</div>
+        <div class="card-actions">
+          <button class="btn-call" onclick="event.stopPropagation();callProvider('${p.phone}','${p.name}')">📞 Contact</button>
+          <button class="btn-save" onclick="event.stopPropagation();saveProvider(${p.id})">🔖</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── FILTER ──────────────────────────────────────────────────────────────────
+function filterCategory(id) {
+  activeCategory = id;
+  activeSearch = '';
+  document.getElementById('searchInput').value = '';
+  renderCategories();
+
+  const filtered = id === 'all' ? providers : providers.filter(p => p.category === id);
+  const cat = categories.find(c => c.id === id);
+  document.getElementById('resultsTitle').textContent = id === 'all' ? 'All Providers' : cat.icon + ' ' + cat.name;
+  document.getElementById('resultsSubtitle').textContent = `Showing verified service providers in Akure, Ondo State`;
+  renderServices(filtered);
+  hideAI();
+}
+
+// ─── SEARCH ──────────────────────────────────────────────────────────────────
+function quickSearch(term) {
+  document.getElementById('searchInput').value = term;
+  handleSearch();
+}
+
+async function handleSearch() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!q) { filterCategory('all'); return; }
+
+  activeSearch = q;
+  activeCategory = 'all';
+  renderCategories();
+
+  const filtered = providers.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.catLabel.toLowerCase().includes(q) ||
+    p.desc.toLowerCase().includes(q) ||
+    p.area.toLowerCase().includes(q)
+  );
+
+  document.getElementById('resultsTitle').textContent = `Results for "${q}"`;
+  document.getElementById('resultsSubtitle').textContent = 'AI-powered search · Akure, Ondo State';
+  renderServices(filtered);
+
+  // Show AI assistant
+  showAI(q, filtered);
+}
+
+// ─── AI ASSISTANT ────────────────────────────────────────────────────────────
+function showAI(query, results) {
+  const panel = document.getElementById('aiPanel');
+  const body = document.getElementById('aiBody');
+  panel.classList.add('visible');
+  body.className = 'ai-body loading';
+  body.textContent = '';
+
+  const prompt = `You are LocalFind's AI assistant helping someone in Akure, Ondo State, Nigeria find a local service provider. They searched for: "${query}". There are ${results.length} result(s). ${results.length > 0 ? `Top result: ${results[0].name} (${results[0].catLabel}) — ${results[0].desc}` : 'No exact match found.'}
+
+In 2-3 short sentences: briefly acknowledge what they're looking for, highlight the best match or suggest what to search instead, and give one practical tip (like what to check before hiring or a price expectation). Be warm, direct, and locally relevant. No markdown.`;
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 200,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    const text = d.content?.[0]?.text || 'I found some providers that match your search. Check the results below and contact your preferred provider directly.';
+    body.className = 'ai-body';
+    typeText(body, text);
+  })
+  .catch(() => {
+    body.className = 'ai-body';
+    body.textContent = results.length > 0
+      ? `Found ${results.length} provider(s) matching your search. The top result is ${results[0].name} — check their details and contact them directly.`
+      : `No exact match for "${query}". Try a related term or submit a service request below and we'll find someone for you.`;
+  });
+}
+
+function hideAI() {
+  document.getElementById('aiPanel').classList.remove('visible');
+}
+
+function typeText(el, text) {
+  el.textContent = '';
+  let i = 0;
+  const interval = setInterval(() => {
+    el.textContent += text[i];
+    i++;
+    if (i >= text.length) clearInterval(interval);
+  }, 18);
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
+function openModal(id) {
+  const p = providers.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('modalContent').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+      <div class="provider-avatar" style="background:${p.color};width:60px;height:60px;font-size:28px;">${p.icon}</div>
+      <div>
+        <h2>${p.name}</h2>
+        <div class="modal-cat">${p.catLabel} · ${p.verified ? '✅ Verified' : 'Unverified'}</div>
+      </div>
+    </div>
+    <div class="modal-detail"><span class="icon">📍</span><span>${p.area}</span></div>
+    <div class="modal-detail"><span class="icon">📞</span><span>${p.phone}</span></div>
+    <div class="modal-detail"><span class="icon">💰</span><span>${p.price}</span></div>
+    <div class="modal-detail"><span class="icon">⭐</span><span>${p.rating} / 5 (${p.reviews} reviews)</span></div>
+    <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-top:12px;">${p.desc}</p>
+    <button class="modal-btn" onclick="callProvider('${p.phone}','${p.name}')">📞 Contact ${p.name.split(' ')[0]}</button>
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ─── ACTIONS ─────────────────────────────────────────────────────────────────
+function callProvider(phone, name) {
+  showToast(`📞 Connecting you to ${name.split(' ')[0]}...`);
+  setTimeout(() => { window.location.href = `tel:${phone}`; }, 600);
+}
+
+function saveProvider(id) {
+  const p = providers.find(x => x.id === id);
+  showToast(`🔖 ${p.name} saved to your list!`);
+}
+
+function submitRequest() {
+  const name = document.getElementById('reqName').value.trim();
+  const phone = document.getElementById('reqPhone').value.trim();
+  const cat = document.getElementById('reqCategory').value;
+  const desc = document.getElementById('reqDesc').value.trim();
+  if (!name || !phone || !cat) { showToast('⚠️ Please fill in your name, phone, and category.'); return; }
+  showToast(`✅ Request submitted! We'll match you with a ${cat} soon.`);
+  document.getElementById('reqName').value = '';
+  document.getElementById('reqPhone').value = '';
+  document.getElementById('reqCategory').value = '';
+  document.getElementById('reqDesc').value = '';
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── SEARCH ON ENTER ─────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleSearch();
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderCategories();
+renderServices(providers);
+</script>
+</body>
+</html>
